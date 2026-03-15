@@ -1,14 +1,18 @@
+const http = require('http');
 const WebSocket = require('ws');
 
-// Render provides the port via process.env.PORT
-const port = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port });
+// Create a standard HTTP server to satisfy Render's health checks
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('P2P Signaling Server is Live!\n');
+});
+
+const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
     console.log('New Peer Connected');
 
     ws.on('message', (data) => {
-        // Convert buffer to string
         const message = data.toString();
         console.log('Received:', message);
 
@@ -21,8 +25,10 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => console.log('Peer Disconnected'));
-    
     ws.on('error', (error) => console.error('WebSocket Error:', error));
 });
 
-console.log(`Signaling server is running on port ${port}`);
+const port = process.env.PORT || 8080;
+server.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port ${port}`);
+});
